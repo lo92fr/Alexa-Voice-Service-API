@@ -1,26 +1,28 @@
 // https://developer.amazon.com/docs/alexa-voice-service/system.html
 import * as http2 from "http2";
 
-import {API_VERSION, HTTP2_BOUNDARY} from "./constants/general";
+import { API_VERSION, HTTP2_BOUNDARY } from "./constants/general";
 import Http2Utility from "./http2-utility";
+import { AVSApi } from './avs-api';
 
 export default class System {
     private readonly http2Utility: Http2Utility;
 
-    constructor(private readonly client: http2.ClientHttp2Session) {
+    constructor(private readonly avsApi: AVSApi) {
         this.http2Utility = new Http2Utility();
     }
 
-    public synchronizeState(accessToken: string, context: AVS.Context): Promise<void> {
-        const req = this.client.request({
+    public synchronizeState(): Promise<void> {
+        const req = this.avsApi.Http2Client.request({
             ":method": "POST",
             ":path": `/${API_VERSION}/events`,
-            authorization: `Bearer ${accessToken}`,
+            authorization: `Bearer ${this.avsApi.accessToken}`,
             "content-type": `multipart/form-data; boundary=${HTTP2_BOUNDARY}`,
         });
 
+
         const metadata = this.http2Utility.createMetadata<AVS.System.SynchronizeStateMetadata>({
-            context: context,
+            context: this.avsApi.context,
             event: {
                 header: {
                     namespace: "System",
@@ -35,10 +37,14 @@ export default class System {
             console.log("System sync");
 
             req.on("response", (headers, flags) => {
+                console.log("===================================");
+                console.log("synchronise response start");
                 // tslint:disable-next-line:forin
                 for (const name in headers) {
                     console.log(`${name}: ${headers[name]}`);
                 }
+                console.log("synchronise response end");
+                console.log("===================================");
                 resolve();
             });
 
@@ -50,7 +56,13 @@ export default class System {
                 data += chunk;
             });
             req.on("end", () => {
+                console.log("===================================");
+                console.log("synchronise data start");
                 console.log(`\n${data}`);
+                console.log("synchronise data end");
+                console.log("===================================");
+
+
             });
             req.end();
         });

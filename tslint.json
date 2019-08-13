@@ -18,6 +18,6 @@
         "member-ordering": false,
         "object-literal-key-quotes": false,
         "no-implicit-dependencies": false,
-        "no-submodule-imports": false
+        "no-submodule-imports": true
     }
 }
